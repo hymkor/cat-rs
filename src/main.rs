@@ -2,18 +2,25 @@ use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
-fn copy_file_content_to_stdout(mut count: i32, filename: &str) -> Result<i32,io::Error> {
+fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Option<i32>,io::Error> {
     let file = match File::open(filename) {
         Ok(file) => file,
         Err(e) => { return Err(e) }
     };
     let reader = BufReader::new(file);
 
-    for line in reader.lines() {
-        count += 1;
-        println!("{}: {}", count,line?);
+    if let Some(mut c) = count {
+        for line in reader.lines() {
+            c += 1;
+            println!("{}: {}", c,line?);
+        }
+        Ok(Some(c))
+    } else {
+        for line in reader.lines() {
+            println!("{}", line?);
+        }
+        Ok(None)
     }
-    Ok(count)
 }
 
 fn main() {
@@ -24,13 +31,17 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mut count = 0;
+    let mut count : Option<i32> = None;
     for filename in &args[1..] {
-        match copy_file_content_to_stdout(count,filename){
-            Ok(c) => count = c,
-            Err(err) => {
-                eprintln!("Error: {}", err);
-                std::process::exit(1);
+        if filename == "-n" {
+            count = Some(0)
+        } else {
+            match copy_file_content_to_stdout(count,filename){
+                Ok(c) => count = c,
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    std::process::exit(1);
+                }
             }
         }
     }
