@@ -32,16 +32,16 @@ fn main() {
     }
 
     let mut count : Option<i32> = None;
-    for filename in &args[1..] {
-        if filename == "-n" {
-            count = Some(0)
-        } else {
-            match copy_file_content_to_stdout(count,filename){
-                Ok(c) => count = c,
-                Err(err) => {
-                    eprintln!("Error: {}", err);
-                    std::process::exit(1);
-                }
+    for arg in &args[1..] {
+        if arg == "-n" {
+            count = Some(0);
+            continue;
+        }
+        match copy_file_content_to_stdout(count,arg){
+            Ok(c) => count = c,
+            Err(err) => {
+                eprintln!("Error: {}", err);
+                std::process::exit(1);
             }
         }
     }
