@@ -23,10 +23,11 @@ fn main() {
         std::process::exit(1);
     }
 
-    let filename = &args[1];
-    if let Err(err) = copy_file_content_to_stdout(filename) {
-        eprintln!("Error: {}", err);
-        std::process::exit(1);
+    for filename in &args[1..] {
+        if let Err(err) = copy_file_content_to_stdout(filename) {
+            eprintln!("Error: {}", err);
+            std::process::exit(1);
+        }
     }
 }
 
