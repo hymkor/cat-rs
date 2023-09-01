@@ -3,7 +3,12 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
 fn copy_file_content_to_stdout(filename: &str) -> io::Result<()> {
-    let file = File::open(filename)?;
+    let file = match File::open(filename) {
+        Ok(file) => file,
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::Other, "File open error"));
+        }
+    };
     let reader = BufReader::new(file);
 
     for line in reader.lines() {
