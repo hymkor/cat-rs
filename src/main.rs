@@ -1,15 +1,14 @@
 use std::env;
 use std::fs::File;
-use std::io::{self,Read};
+use std::io::{self, BufRead, BufReader};
 
 fn copy_file_content_to_stdout(filename: &str) -> io::Result<()> {
-    let mut file = File::open(filename)?;
+    let file = File::open(filename)?;
+    let reader = BufReader::new(file);
 
-    let mut buffer = String::new();
-    file.read_to_string(&mut buffer)?;
-
-    print!("{}", buffer);
-
+    for line in reader.lines() {
+        println!("{}", line?);
+    }
     Ok(())
 }
 
