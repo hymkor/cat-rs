@@ -5,9 +5,7 @@ use std::io::{self, BufRead, BufReader};
 fn copy_file_content_to_stdout(filename: &str) -> io::Result<()> {
     let file = match File::open(filename) {
         Ok(file) => file,
-        Err(_) => {
-            return Err(io::Error::new(io::ErrorKind::Other, "File open error"));
-        }
+        Err(e) => { return Err(e) }
     };
     let reader = BufReader::new(file);
 
