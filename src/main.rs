@@ -23,12 +23,9 @@ fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Opt
     }
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-
+fn mains(args : Vec<String>) -> Option<String> {
     if args.len() < 2 {
-        eprintln!("Usage: {} <filename>", args[0]);
-        std::process::exit(1);
+        return Some(format!("Usage: {} <filename>", args[0]))
     }
 
     let mut count : Option<i32> = None;
@@ -40,10 +37,16 @@ fn main() {
         match copy_file_content_to_stdout(count,arg){
             Ok(c) => count = c,
             Err(err) => {
-                eprintln!("Error: {}", err);
-                std::process::exit(1);
+                return Some(format!("Error: {}", err));
             }
         }
     }
+    return None
 }
 
+fn main(){
+    if let Some(message) = mains(env::args().collect()) {
+        eprintln!("{}",message);
+        std::process::exit(1);
+    }
+}
