@@ -1,3 +1,6 @@
+extern crate glob;
+
+use glob::glob;
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
@@ -34,10 +37,33 @@ fn mains(args : Vec<String>) -> Option<String> {
             count = Some(0);
             continue;
         }
-        match copy_file_content_to_stdout(count,arg){
-            Ok(c) => count = c,
-            Err(err) => {
-                return Some(format!("Error: {}", err));
+        match glob(arg) {
+            Ok(arg) => {
+                for filename in arg {
+                    match filename {
+                        Ok(filename_) => {
+                            if let Some(filename__) = filename_.to_str() {
+                                match copy_file_content_to_stdout(count,filename__){
+                                    Ok(c) => count = c,
+                                    Err(err) => {
+                                        return Some(format!("Error: {}", err))
+                                    }
+                                }
+                            }
+                        },
+                        Err(err) => {
+                            return Some(format!("Error: {}", err))
+                        }
+                    }
+                }
+            },
+            Err(_) => {
+                match copy_file_content_to_stdout(count,arg){
+                    Ok(c) => count = c,
+                    Err(err) => {
+                        return Some(format!("Error: {}", err));
+                    }
+                }
             }
         }
     }
