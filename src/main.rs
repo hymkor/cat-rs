@@ -66,10 +66,9 @@ fn mains(args : Vec<String>) -> Result<(),CatError> {
             continue;
         }
         let mut glob_ok = false;
-        let pattern = glob(arg)?;
-        for filename in pattern {
-            if let Some(filename__) = filename?.to_str() {
-                count = copy_file_content_to_stdout(count,filename__)?;
+        for filename in glob(arg)? {
+            if let Some(filename) = filename?.to_str() {
+                count = copy_file_content_to_stdout(count,filename)?;
                 glob_ok = true;
             }
         }
