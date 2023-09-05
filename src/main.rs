@@ -6,10 +6,7 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 
 fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Option<i32>,io::Error> {
-    let file = match File::open(filename) {
-        Ok(file) => file,
-        Err(e) => { return Err(e) }
-    };
+    let file = File::open(filename)?;
     let reader = BufReader::new(file);
 
     if let Some(mut c) = count {
@@ -29,6 +26,25 @@ fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Opt
 enum CatError {
     Io(io::Error),
     Glob(glob::GlobError),
+    Pattern(glob::PatternError),
+}
+
+impl From<io::Error> for CatError {
+    fn from(err: io::Error) -> CatError {
+        CatError::Io(err)
+    }
+}
+
+impl From<glob::GlobError> for CatError {
+    fn from(err: glob::GlobError) -> CatError {
+        CatError::Glob(err)
+    }
+}
+
+impl From<glob::PatternError> for CatError {
+    fn from(err: glob::PatternError) -> CatError {
+        CatError::Pattern(err)
+    }
 }
 
 fn mains(args : Vec<String>) -> Result<(),CatError> {
@@ -39,33 +55,15 @@ fn mains(args : Vec<String>) -> Result<(),CatError> {
             continue;
         }
         let mut glob_ok = false;
-        if let Ok(pattern) = glob(arg) {
-            for filename in pattern {
-                match filename {
-                    Ok(filename_) => {
-                        if let Some(filename__) = filename_.to_str() {
-                            match copy_file_content_to_stdout(count,filename__){
-                                Ok(c) => count = c,
-                                Err(err) => {
-                                    return Err(CatError::Io(err))
-                                }
-                            }
-                            glob_ok = true;
-                        }
-                    },
-                    Err(err) => {
-                        return Err(CatError::Glob(err))
-                    },
-                }
+        let pattern = glob(arg)?;
+        for filename in pattern {
+            if let Some(filename__) = filename?.to_str() {
+                count = copy_file_content_to_stdout(count,filename__)?;
+                glob_ok = true;
             }
         }
         if ! glob_ok {
-            match copy_file_content_to_stdout(count,arg){
-                Ok(c) => count = c,
-                Err(err) => {
-                    return Err(CatError::Io(err))
-                }
-            }
+            count = copy_file_content_to_stdout(count,arg)?
         }
     }
     return Ok(())
@@ -82,6 +80,7 @@ fn main(){
         match err {
             CatError::Io(err) => eprintln!("{}",err),
             CatError::Glob(err) => eprintln!("{}",err),
+            CatError::Pattern(err) => eprintln!("{}",err),
         }
         std::process::exit(1);
     }
