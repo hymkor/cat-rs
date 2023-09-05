@@ -3,12 +3,11 @@ extern crate glob;
 use glob::glob;
 use std::env;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self,BufRead};
 use std::fmt;
 
-fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Option<i32>,io::Error> {
-    let file = File::open(filename)?;
-    let reader = BufReader::new(file);
+fn cat1<R: std::io::Read>(count: Option<i32>, r: R) -> Result<Option<i32>,io::Error> {
+    let reader = io::BufReader::new(r);
 
     if let Some(mut c) = count {
         for line in reader.lines() {
@@ -58,35 +57,38 @@ impl From<glob::PatternError> for CatError {
     }
 }
 
-fn mains(args : Vec<String>) -> Result<(),CatError> {
+fn cat(args : Vec<String>) -> Result<(),CatError> {
+    if args.len() < 2 {
+        cat1(None,io::stdin())?;
+        return Ok(())
+    }
+
     let mut count : Option<i32> = None;
     for arg in &args[1..] {
         if arg == "-n" {
             count = Some(0);
             continue;
         }
+        if arg == "-" {
+            count = cat1(count,io::stdin())?;
+            continue
+        }
         let mut glob_ok = false;
         for filename in glob(arg)? {
             if let Some(filename) = filename?.to_str() {
-                count = copy_file_content_to_stdout(count,filename)?;
+                count = cat1(count,File::open(filename)?)?;
                 glob_ok = true;
             }
         }
         if ! glob_ok {
-            count = copy_file_content_to_stdout(count,arg)?
+            count = cat1(count,File::open(arg)?)?
         }
     }
     return Ok(())
 }
 
 fn main(){
-    let args : Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <filename>", args[0]);
-        std::process::exit(1);
-    }
-
-    if let Err(err) = mains(args) {
+    if let Err(err) = cat(env::args().collect()) {
         eprintln!("{}",err);
         std::process::exit(1);
     }
