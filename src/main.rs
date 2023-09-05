@@ -4,6 +4,7 @@ use glob::glob;
 use std::env;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
+use std::fmt;
 
 fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Option<i32>,io::Error> {
     let file = File::open(filename)?;
@@ -27,6 +28,16 @@ enum CatError {
     Io(io::Error),
     Glob(glob::GlobError),
     Pattern(glob::PatternError),
+}
+
+impl fmt::Display for CatError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CatError::Io(e) => e.fmt(f),
+            CatError::Glob(e) => e.fmt(f),
+            CatError::Pattern(e) => e.fmt(f),
+        }
+    }
 }
 
 impl From<io::Error> for CatError {
@@ -77,11 +88,7 @@ fn main(){
     }
 
     if let Err(err) = mains(args) {
-        match err {
-            CatError::Io(err) => eprintln!("{}",err),
-            CatError::Glob(err) => eprintln!("{}",err),
-            CatError::Pattern(err) => eprintln!("{}",err),
-        }
+        eprintln!("{}",err);
         std::process::exit(1);
     }
 }
