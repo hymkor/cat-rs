@@ -26,7 +26,12 @@ fn copy_file_content_to_stdout(count: Option<i32>, filename: &str) -> Result<Opt
     }
 }
 
-fn mains(args : Vec<String>) -> Option<String> {
+enum CatError {
+    Io(io::Error),
+    Glob(glob::GlobError),
+}
+
+fn mains(args : Vec<String>) -> Result<(),CatError> {
     let mut count : Option<i32> = None;
     for arg in &args[1..] {
         if arg == "-n" {
@@ -42,14 +47,14 @@ fn mains(args : Vec<String>) -> Option<String> {
                             match copy_file_content_to_stdout(count,filename__){
                                 Ok(c) => count = c,
                                 Err(err) => {
-                                    return Some(format!("Error: {}", err))
+                                    return Err(CatError::Io(err))
                                 }
                             }
                             glob_ok = true;
                         }
                     },
                     Err(err) => {
-                        return Some(format!("Error: {}", err))
+                        return Err(CatError::Glob(err))
                     },
                 }
             }
@@ -58,12 +63,12 @@ fn mains(args : Vec<String>) -> Option<String> {
             match copy_file_content_to_stdout(count,arg){
                 Ok(c) => count = c,
                 Err(err) => {
-                    return Some(format!("Error: {}", err));
+                    return Err(CatError::Io(err))
                 }
             }
         }
     }
-    return None
+    return Ok(())
 }
 
 fn main(){
@@ -73,8 +78,11 @@ fn main(){
         std::process::exit(1);
     }
 
-    if let Some(message) = mains(args) {
-        eprintln!("{}",message);
+    if let Err(err) = mains(args) {
+        match err {
+            CatError::Io(err) => eprintln!("{}",err),
+            CatError::Glob(err) => eprintln!("{}",err),
+        }
         std::process::exit(1);
     }
 }
