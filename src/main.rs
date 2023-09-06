@@ -4,7 +4,6 @@ use glob::glob;
 use std::env;
 use std::fs::File;
 use std::io::{self,BufRead};
-use std::fmt;
 
 fn cat1<R: std::io::Read>(count: &mut Option<i32>, r: R) -> Result<(),io::Error> {
     let reader = io::BufReader::new(r);
@@ -23,41 +22,7 @@ fn cat1<R: std::io::Read>(count: &mut Option<i32>, r: R) -> Result<(),io::Error>
     Ok(())
 }
 
-enum CatError {
-    Io(io::Error),
-    Glob(glob::GlobError),
-    Pattern(glob::PatternError),
-}
-
-impl fmt::Display for CatError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CatError::Io(e) => e.fmt(f),
-            CatError::Glob(e) => e.fmt(f),
-            CatError::Pattern(e) => e.fmt(f),
-        }
-    }
-}
-
-impl From<io::Error> for CatError {
-    fn from(err: io::Error) -> CatError {
-        CatError::Io(err)
-    }
-}
-
-impl From<glob::GlobError> for CatError {
-    fn from(err: glob::GlobError) -> CatError {
-        CatError::Glob(err)
-    }
-}
-
-impl From<glob::PatternError> for CatError {
-    fn from(err: glob::PatternError) -> CatError {
-        CatError::Pattern(err)
-    }
-}
-
-fn cat(args : Vec<String>) -> Result<(),CatError> {
+fn cat(args : Vec<String>) -> Result<(),Box<dyn std::error::Error>> {
     let mut count : Option<i32> = None;
     if args.len() < 2 {
         cat1(&mut count,io::stdin())?;
