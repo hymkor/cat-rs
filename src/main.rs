@@ -1,7 +1,5 @@
 extern crate glob;
 
-use glob::glob;
-use std::env;
 use std::fs::File;
 use std::io::{self,BufRead};
 
@@ -39,7 +37,7 @@ fn cat(args : Vec<String>) -> Result<(),Box<dyn std::error::Error>> {
             continue
         }
         let mut glob_ok = false;
-        for filename in glob(arg)? {
+        for filename in glob::glob(arg)? {
             if let Some(filename) = filename?.to_str() {
                 cat1(&mut count,File::open(filename)?)?;
                 glob_ok = true;
@@ -53,7 +51,7 @@ fn cat(args : Vec<String>) -> Result<(),Box<dyn std::error::Error>> {
 }
 
 fn main(){
-    if let Err(err) = cat(env::args().collect()) {
+    if let Err(err) = cat(std::env::args().collect()) {
         eprintln!("{}",err);
         std::process::exit(1);
     }
